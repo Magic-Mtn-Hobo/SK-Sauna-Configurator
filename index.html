@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sweat Kingdom Sauna Configurator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f1;
+      --card-bg: #ffffff;
+      --border: #e0ddd7;
+      --accent: #8b4513;
+      --accent-dark: #6b3410;
+      --text: #2c2420;
+      --muted: #7a6e68;
+      --input-bg: #faf9f7;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 3px 12px rgba(0,0,0,0.04);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: var(--accent);
+      color: #fff;
+      padding: 22px 20px 18px;
+      text-align: center;
+    }
+    .site-header h1 { font-size: clamp(18px, 4vw, 26px); font-weight: 700; }
+    .site-header p  { margin-top: 4px; font-size: 12px; opacity: .80; }
+
+    /* ── Wrapper ── */
+    .form-wrapper {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 22px 14px 56px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px 14px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Generic grid ── */
+    .grid { display: grid; gap: 10px 14px; }
+    .g2  { grid-template-columns: repeat(2, 1fr); }
+    .g3  { grid-template-columns: repeat(3, 1fr); }
+    .g4  { grid-template-columns: repeat(4, 1fr); }
+    .g-auto { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+
+    /* ── Field ── */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+
+    label.lbl {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color .14s, box-shadow .14s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%237a6e68' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 26px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139,69,19,.11);
+    }
+    textarea { resize: vertical; min-height: 100px; }
+
+    /* ── Ft / In row ── */
+    .dim-table { width: 100%; border-collapse: collapse; }
+    .dim-table th {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--muted);
+      padding: 0 0 5px; text-align: left;
+    }
+    .dim-table th:not(:first-child) { text-align: center; }
+    .dim-table td { padding: 4px 4px 4px 0; vertical-align: middle; }
+    .dim-table td:first-child {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      white-space: nowrap; padding-right: 10px; width: 60px;
+    }
+    .dim-table td input { text-align: center; }
+    .dim-sep { font-size: 13px; color: var(--muted); padding: 0 4px; }
+
+    /* ── Roof pitch inline ── */
+    .pitch-row { display: flex; align-items: center; gap: 8px; }
+    .pitch-row input { width: 70px; text-align: center; }
+    .pitch-row span { font-size: 14px; color: var(--muted); }
+
+    /* ── Checkbox ── */
+    .chk {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0;
+    }
+    .chk input[type="checkbox"] {
+      width: 18px; height: 18px; flex-shrink: 0;
+      accent-color: var(--accent); cursor: pointer;
+      border-radius: 3px; border: 1.5px solid var(--border);
+    }
+    .chk label {
+      font-size: 13px; font-weight: 500; color: var(--text);
+      cursor: pointer; line-height: 1.3;
+    }
+
+    /* ── Window table ── */
+    .win-table { width: 100%; border-collapse: collapse; }
+    .win-table th {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--muted);
+      padding: 0 4px 6px; text-align: left;
+    }
+    .win-table th:first-child { width: 52px; }
+    .win-table td {
+      padding: 4px 4px 4px 0; vertical-align: middle;
+    }
+    .win-table td:first-child {
+      font-size: 12px; font-weight: 700; color: var(--text);
+      text-transform: uppercase; letter-spacing: .04em;
+      padding-right: 6px;
+    }
+    .win-table tr:nth-child(even) td { background: #f8f7f5; }
+    .win-table tr:nth-child(even) td:first-child { background: none; }
+
+    /* ── Bench checkbox grid ── */
+    .bench-checks {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 10px;
+    }
+    .bench-wall-label {
+      grid-column: 1 / -1;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      padding: 8px 0 2px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+    }
+    .bench-wall-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+    /* ── Export ── */
+    .export-wrap { display: flex; justify-content: center; padding: 6px 0 10px; }
+    .btn-export {
+      background: var(--accent);
+      color: #fff; border: none; border-radius: 8px;
+      padding: 14px 40px; font-size: 15px; font-weight: 700;
+      letter-spacing: .02em; cursor: pointer;
+      transition: background .14s, transform .1s;
+      min-width: 200px; min-height: 50px;
+    }
+    .btn-export:hover { background: var(--accent-dark); }
+    .btn-export:active { transform: scale(.98); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .card { padding: 14px 12px 12px; }
+      .g2, .g3, .g4 { grid-template-columns: 1fr; }
+      .bench-checks { grid-template-columns: 1fr; }
+      .win-table th:nth-child(4), .win-table td:nth-child(4) { display: none; }
+    }
+    @media (max-width: 768px) {
+      .g4 { grid-template-columns: repeat(2, 1fr); }
+      .g3 { grid-template-columns: repeat(2, 1fr); }
+      .bench-checks { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Sweat Kingdom Sauna Configurator</h1>
+  <p>Complete all sections below to generate your custom sauna order</p>
+</header>
+
+<div class="form-wrapper">
+<form id="saunaForm" novalidate>
+
+  <!-- 1. Customer Information -->
+  <div class="card">
+    <div class="card-title">1 — Customer Information</div>
+    <div class="grid g2" style="gap:10px 14px;">
+      <div class="field" style="grid-column:1/-1;">
+        <label class="lbl" for="custName">Customer Name</label>
+        <input type="text" id="custName" placeholder="Full name" />
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label class="lbl" for="custAddress">Address</label>
+        <input type="text" id="custAddress" placeholder="Street, City, State, ZIP" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="custPhone">Phone</label>
+        <input type="text" id="custPhone" placeholder="(555) 000-0000" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="floorPlan">Floor Plan</label>
+        <select id="floorPlan">
+          <option value="">Select…</option>
+          <option>SK 110</option>
+          <option>SK 210</option>
+          <option>SK 310</option>
+          <option>SK Custom</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="deliveryMethod">Delivery Method</label>
+        <select id="deliveryMethod">
+          <option value="">Select…</option>
+          <option>Pickup on Site</option>
+          <option>Sweat Kingdom</option>
+          <option>Hot Shot</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="installMethod">Install Method</label>
+        <select id="installMethod">
+          <option value="">Select…</option>
+          <option>Customer Sourced</option>
+          <option>Telehandler</option>
+          <option>Crane</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Materials -->
+  <div class="card">
+    <div class="card-title">2 — Exterior &amp; Interior Materials</div>
+    <div class="grid g2">
+      <div class="field">
+        <label class="lbl" for="extMaterial">Exterior Material</label>
+        <select id="extMaterial">
+          <option value="">Select…</option>
+          <option>Vertical Plank Cedar</option>
+          <option>Horizontal Plank Cedar</option>
+          <option>B&amp;B LP Smart Siding</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="extFinish">Exterior Finish</label>
+        <input type="text" id="extFinish" placeholder="e.g. Natural, stain color…" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="intFlooring">Interior Flooring</label>
+        <select id="intFlooring">
+          <option value="">Select…</option>
+          <option>Rubber</option>
+          <option>Cedar</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="heater">Sauna Heater</label>
+        <input type="text" id="heater" placeholder="Model / description…" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Basic Size -->
+  <div class="card">
+    <div class="card-title">3 — Basic Size</div>
+    <table class="dim-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Feet</th>
+          <th style="width:16px;"></th>
+          <th>Inches (total)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Width</td>
+          <td><input type="number" id="sizeWidthFt"  min="0" step="0.01" placeholder="6" /></td>
+          <td class="dim-sep">=</td>
+          <td><input type="number" id="sizeWidthIn"  min="0" step="1"    placeholder="72" /></td>
+        </tr>
+        <tr>
+          <td>Length</td>
+          <td><input type="number" id="sizeLengthFt" min="0" step="0.01" placeholder="8" /></td>
+          <td class="dim-sep">=</td>
+          <td><input type="number" id="sizeLengthIn" min="0" step="1"    placeholder="96" /></td>
+        </tr>
+        <tr>
+          <td>Height</td>
+          <td><input type="number" id="sizeHeightFt" min="0" step="0.01" placeholder="8.17" /></td>
+          <td class="dim-sep">=</td>
+          <td><input type="number" id="sizeHeightIn" min="0" step="1"    placeholder="98" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. Roof & Porch -->
+  <div class="card">
+    <div class="card-title">4 — Roof &amp; Porch</div>
+    <div class="grid g4">
+      <div class="field">
+        <label class="lbl">Roof Pitch</label>
+        <div class="pitch-row">
+          <input type="number" id="roofPitch" min="0" max="24" step="1" placeholder="2" />
+          <span>/ 12</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="highSide">High Side</label>
+        <select id="highSide">
+          <option value="">Select…</option>
+          <option>Front</option><option>Back</option>
+          <option>Left</option><option>Right</option><option>None</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="porchDepth">Porch Depth (in)</label>
+        <input type="number" id="porchDepth" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="openPorch">Open Porch</label>
+        <select id="openPorch">
+          <option value="">Select…</option>
+          <option>Left</option><option>Right</option><option>None</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Doors & Windows -->
+  <div class="card">
+    <div class="card-title">5 — Doors &amp; Windows</div>
+    <div class="grid g4" style="margin-bottom:12px;">
+      <div class="field">
+        <label class="lbl" for="doorPosition">Door Position</label>
+        <select id="doorPosition">
+          <option value="">Select…</option>
+          <option>Left</option><option>Right</option><option>Center</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="handleSide">Handle Side</label>
+        <select id="handleSide">
+          <option value="">Select…</option>
+          <option>Left</option><option>Right</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-title" style="font-size:10px; margin-bottom:8px; padding-bottom:6px;">Windows Present</div>
+    <div class="grid g4">
+      <div class="chk"><input type="checkbox" id="winFront"/><label for="winFront">Front</label></div>
+      <div class="chk"><input type="checkbox" id="winLeft" /><label for="winLeft">Left</label></div>
+      <div class="chk"><input type="checkbox" id="winBack" /><label for="winBack">Back</label></div>
+      <div class="chk"><input type="checkbox" id="winRight"/><label for="winRight">Right</label></div>
+    </div>
+  </div>
+
+  <!-- 6. Window Dimensions -->
+  <div class="card">
+    <div class="card-title">6 — Window Dimensions</div>
+    <table class="win-table">
+      <thead>
+        <tr>
+          <th>Wall</th>
+          <th>Width (in)</th>
+          <th>Height (in)</th>
+          <th>Position</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Front</td>
+          <td><input type="number" id="fwWidth"    min="0" placeholder="0" /></td>
+          <td><input type="number" id="fwHeight"   min="0" placeholder="0" /></td>
+          <td>
+            <select id="fwPosition">
+              <option value="">—</option>
+              <option>Left</option><option>Right</option><option>Center</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Left</td>
+          <td><input type="number" id="lwWidth"    min="0" placeholder="0" /></td>
+          <td><input type="number" id="lwHeight"   min="0" placeholder="0" /></td>
+          <td>
+            <select id="lwPosition">
+              <option value="">—</option>
+              <option>Left</option><option>Right</option><option>Center</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Back</td>
+          <td><input type="number" id="bwWidth"    min="0" placeholder="0" /></td>
+          <td><input type="number" id="bwHeight"   min="0" placeholder="0" /></td>
+          <td>
+            <select id="bwPosition">
+              <option value="">—</option>
+              <option>Left</option><option>Right</option><option>Center</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Right</td>
+          <td><input type="number" id="rwWidth"    min="0" placeholder="0" /></td>
+          <td><input type="number" id="rwHeight"   min="0" placeholder="0" /></td>
+          <td>
+            <select id="rwPosition">
+              <option value="">—</option>
+              <option>Left</option><option>Right</option><option>Center</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 7. Benches (presence) -->
+  <div class="card">
+    <div class="card-title">7 — Benches</div>
+    <div class="bench-checks">
+      <div class="bench-wall-label">Left Wall</div>
+      <div class="chk"><input type="checkbox" id="leftUpper" /><label for="leftUpper">Upper</label></div>
+      <div class="chk"><input type="checkbox" id="leftLower" /><label for="leftLower">Lower</label></div>
+      <div class="bench-wall-label">Right Wall</div>
+      <div class="chk"><input type="checkbox" id="rightUpper"/><label for="rightUpper">Upper</label></div>
+      <div class="chk"><input type="checkbox" id="rightLower"/><label for="rightLower">Lower</label></div>
+      <div class="bench-wall-label">Back Wall</div>
+      <div class="chk"><input type="checkbox" id="backUpper" /><label for="backUpper">Upper</label></div>
+      <div class="chk"><input type="checkbox" id="backLower" /><label for="backLower">Lower</label></div>
+    </div>
+  </div>
+
+  <!-- 8. Bench Sizes -->
+  <div class="card">
+    <div class="card-title">8 — Bench Sizes</div>
+    <div class="bench-checks">
+      <div class="bench-wall-label">Left Wall</div>
+      <div class="field">
+        <label class="lbl" for="leftUpperDepth">Upper Depth (in)</label>
+        <input type="number" id="leftUpperDepth" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="leftLowerDepth">Lower Depth (in)</label>
+        <input type="number" id="leftLowerDepth" min="0" placeholder="0" />
+      </div>
+      <div class="bench-wall-label">Right Wall</div>
+      <div class="field">
+        <label class="lbl" for="rightUpperDepth">Upper Depth (in)</label>
+        <input type="number" id="rightUpperDepth" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="rightLowerDepth">Lower Depth (in)</label>
+        <input type="number" id="rightLowerDepth" min="0" placeholder="0" />
+      </div>
+      <div class="bench-wall-label">Back Wall</div>
+      <div class="field">
+        <label class="lbl" for="backUpperDepth">Upper Depth (in)</label>
+        <input type="number" id="backUpperDepth" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="backLowerDepth">Lower Depth (in)</label>
+        <input type="number" id="backLowerDepth" min="0" placeholder="0" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. Roof Overhang -->
+  <div class="card">
+    <div class="card-title">9 — Roof Overhang</div>
+    <div class="grid g4">
+      <div class="field">
+        <label class="lbl" for="overhangFront">Front (in)</label>
+        <input type="number" id="overhangFront" min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="overhangBack">Back (in)</label>
+        <input type="number" id="overhangBack"  min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="overhangLeft">Left (in)</label>
+        <input type="number" id="overhangLeft"  min="0" placeholder="0" />
+      </div>
+      <div class="field">
+        <label class="lbl" for="overhangRight">Right (in)</label>
+        <input type="number" id="overhangRight" min="0" placeholder="0" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. Additional Notes -->
+  <div class="card">
+    <div class="card-title">10 — Additional Notes</div>
+    <textarea id="notes" placeholder="Special requests, custom dimensions, or additional specifications…"></textarea>
+  </div>
+
+  <div class="export-wrap">
+    <button type="button" class="btn-export" id="exportBtn">Export to PDF</button>
+  </div>
+
+</form>
+</div>
+
+<script>
+  // ── Ft ↔ In sync ──
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  function linkFtIn(ftId, inId) {
+    const ftEl = document.getElementById(ftId);
+    const inEl = document.getElementById(inId);
+    ftEl.addEventListener('input', () => {
+      const v = parseFloat(ftEl.value);
+      inEl.value = isNaN(v) ? '' : Math.round(v * 12);
+    });
+    inEl.addEventListener('input', () => {
+      const v = parseFloat(inEl.value);
+      ftEl.value = isNaN(v) ? '' : round2(v / 12);
+    });
+  }
+
+  linkFtIn('sizeWidthFt',  'sizeWidthIn');
+  linkFtIn('sizeLengthFt', 'sizeLengthIn');
+  linkFtIn('sizeHeightFt', 'sizeHeightIn');
+
+  // ── Helpers ──
+  function val(id) {
+    const el = document.getElementById(id);
+    if (!el) return '—';
+    if (el.type === 'checkbox') return el.checked ? 'Yes' : 'No';
+    return el.value.trim() || '—';
+  }
+
+  function dimVal(ftId, inId) {
+    const ft = document.getElementById(ftId).value.trim();
+    const inches = document.getElementById(inId).value.trim();
+    if (!ft && !inches) return '—';
+    if (ft && inches) return `${ft} ft  (${inches} in)`;
+    return ft ? `${ft} ft` : `${inches} in`;
+  }
+
+  // ── PDF Export ──
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+
+    const pageW  = doc.internal.pageSize.getWidth();
+    const pageH  = doc.internal.pageSize.getHeight();
+    const mL     = 50;
+    const mR     = 50;
+    const cW     = pageW - mL - mR;
+    let y = 0;
+
+    const ACCENT   = [139, 69, 19];
+    const DARK     = [44, 36, 32];
+    const MUTED    = [122, 110, 104];
+    const CARD_BG  = [255, 255, 255];
+    const LIGHT_BG = [245, 244, 241];
+
+    function newPage() { doc.addPage(); y = 40; }
+    function checkPage(h) { if (y + h > pageH - 40) newPage(); }
+
+    // Header
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, 0, pageW, 66, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+    doc.text('Sweat Kingdom Sauna Configurator', pageW / 2, 30, { align: 'center' });
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.text('Custom Order Summary', pageW / 2, 46, { align: 'center' });
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.text('Generated: ' + dateStr, pageW / 2, 59, { align: 'center' });
+    y = 82;
+
+    function drawSection(title, rows) {
+      const rowH = 20;
+      const hdrH = 24;
+      const padV = 8;
+      const totalH = hdrH + padV + rows.length * rowH + padV;
+      checkPage(totalH);
+
+      doc.setFillColor(...CARD_BG);
+      doc.setDrawColor(224, 221, 215);
+      doc.roundedRect(mL, y, cW, totalH, 5, 5, 'FD');
+
+      doc.setFillColor(...ACCENT);
+      doc.roundedRect(mL, y, cW, hdrH, 5, 5, 'F');
+      doc.rect(mL, y + 10, cW, hdrH - 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+      doc.text(title.toUpperCase(), mL + 10, y + 16);
+
+      y += hdrH + padV;
+
+      rows.forEach((row, i) => {
+        const ry = y + i * rowH;
+        if (i % 2 === 1) {
+          doc.setFillColor(248, 247, 245);
+          doc.rect(mL + 1, ry - 4, cW - 2, rowH, 'F');
+        }
+        doc.setTextColor(...MUTED); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+        doc.text(row[0], mL + 10, ry + 7);
+
+        const empty = row[1] === '—';
+        doc.setTextColor(...(empty ? MUTED : DARK));
+        doc.setFontSize(9); doc.setFont('helvetica', empty ? 'normal' : 'bold');
+        doc.text(String(row[1]), mL + cW / 2 + 8, ry + 7);
+      });
+
+      y += rows.length * rowH + padV + 12;
+    }
+
+    drawSection('1 — Customer Information', [
+      ['Customer Name',    val('custName')],
+      ['Address',          val('custAddress')],
+      ['Phone',            val('custPhone')],
+      ['Floor Plan',       val('floorPlan')],
+      ['Delivery Method',  val('deliveryMethod')],
+      ['Install Method',   val('installMethod')],
+    ]);
+
+    drawSection('2 — Exterior & Interior Materials', [
+      ['Exterior Material', val('extMaterial')],
+      ['Exterior Finish',   val('extFinish')],
+      ['Interior Flooring', val('intFlooring')],
+      ['Sauna Heater',      val('heater')],
+    ]);
+
+    drawSection('3 — Basic Size', [
+      ['Width',  dimVal('sizeWidthFt',  'sizeWidthIn')],
+      ['Length', dimVal('sizeLengthFt', 'sizeLengthIn')],
+      ['Height', dimVal('sizeHeightFt', 'sizeHeightIn')],
+    ]);
+
+    drawSection('4 — Roof & Porch', [
+      ['Roof Pitch',       (() => { const v = document.getElementById('roofPitch').value.trim(); return v ? v + ' / 12' : '—'; })()],
+      ['High Side',        val('highSide')],
+      ['Open Porch',       val('openPorch')],
+      ['Porch Depth (in)', val('porchDepth')],
+    ]);
+
+    drawSection('5 — Doors & Windows', [
+      ['Door Position',        val('doorPosition')],
+      ['Handle Side',          val('handleSide')],
+      ['Window — Front Wall',  val('winFront')],
+      ['Window — Left Wall',   val('winLeft')],
+      ['Window — Back Wall',   val('winBack')],
+      ['Window — Right Wall',  val('winRight')],
+    ]);
+
+    drawSection('6 — Window Dimensions', [
+      ['Front Width (in)',    val('fwWidth')],
+      ['Front Height (in)',   val('fwHeight')],
+      ['Front Position',      val('fwPosition')],
+      ['Left Width (in)',     val('lwWidth')],
+      ['Left Height (in)',    val('lwHeight')],
+      ['Left Position',       val('lwPosition')],
+      ['Back Width (in)',     val('bwWidth')],
+      ['Back Height (in)',    val('bwHeight')],
+      ['Back Position',       val('bwPosition')],
+      ['Right Width (in)',    val('rwWidth')],
+      ['Right Height (in)',   val('rwHeight')],
+      ['Right Position',      val('rwPosition')],
+    ]);
+
+    drawSection('7 — Benches', [
+      ['Upper Bench — Left Wall',  val('leftUpper')],
+      ['Upper Bench — Right Wall', val('rightUpper')],
+      ['Upper Bench — Back Wall',  val('backUpper')],
+      ['Lower Bench — Left Wall',  val('leftLower')],
+      ['Lower Bench — Right Wall', val('rightLower')],
+      ['Lower Bench — Back Wall',  val('backLower')],
+    ]);
+
+    drawSection('8 — Bench Sizes', [
+      ['Upper Left Depth (in)',  val('leftUpperDepth')],
+      ['Upper Right Depth (in)', val('rightUpperDepth')],
+      ['Upper Back Depth (in)',  val('backUpperDepth')],
+      ['Lower Left Depth (in)',  val('leftLowerDepth')],
+      ['Lower Right Depth (in)', val('rightLowerDepth')],
+      ['Lower Back Depth (in)',  val('backLowerDepth')],
+    ]);
+
+    drawSection('9 — Roof Overhang', [
+      ['Front (in)', val('overhangFront')],
+      ['Back (in)',  val('overhangBack')],
+      ['Left (in)',  val('overhangLeft')],
+      ['Right (in)', val('overhangRight')],
+    ]);
+
+    // Notes
+    const notesText = document.getElementById('notes').value.trim() || '—';
+    const noteLines  = doc.splitTextToSize(notesText, cW - 24);
+    const notesRowH  = 14;
+    const notesH     = 24 + 8 + noteLines.length * notesRowH + 10;
+    checkPage(notesH);
+
+    doc.setFillColor(...CARD_BG); doc.setDrawColor(224, 221, 215);
+    doc.roundedRect(mL, y, cW, notesH, 5, 5, 'FD');
+    doc.setFillColor(...ACCENT);
+    doc.roundedRect(mL, y, cW, 24, 5, 5, 'F');
+    doc.rect(mL, y + 10, cW, 14, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('10 — ADDITIONAL NOTES', mL + 10, y + 16);
+    y += 24 + 8;
+
+    const empty = notesText === '—';
+    doc.setTextColor(...(empty ? MUTED : DARK));
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    noteLines.forEach((l, i) => doc.text(l, mL + 10, y + i * notesRowH));
+
+    // Footer
+    const total = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p);
+      doc.setFillColor(...LIGHT_BG);
+      doc.rect(0, pageH - 26, pageW, 26, 'F');
+      doc.setTextColor(...MUTED); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+      doc.text('Sweat Kingdom Sauna Configurator', mL, pageH - 10);
+      doc.text('Page ' + p + ' of ' + total, pageW - mR, pageH - 10, { align: 'right' });
+    }
+
+    const name = document.getElementById('custName').value.trim();
+    const filename = name
+      ? 'SweatKingdom_' + name.replace(/\s+/g, '_') + '.pdf'
+      : 'SweatKingdom_SaunaOrder.pdf';
+
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isSafari || isIOS) {
+      window.open(URL.createObjectURL(doc.output('blob')), '_blank');
+    } else {
+      doc.save(filename);
+    }
+  });
+</script>
+</body>
+</html>
