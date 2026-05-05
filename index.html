@@ -242,6 +242,10 @@
         <input type="text" id="custPhone" placeholder="(555) 000-0000" />
       </div>
       <div class="field">
+        <label class="lbl" for="custEmail">Email</label>
+        <input type="text" id="custEmail" placeholder="email@example.com" />
+      </div>
+      <div class="field">
         <label class="lbl" for="floorPlan">Floor Plan</label>
         <select id="floorPlan">
           <option value="">Select…</option>
@@ -657,6 +661,7 @@
 
     drawSection('1 — Customer Information', [
       ['Customer Name',    val('custName')],
+      ['Customer Email',   val('custEmail')],
       ['Address',          val('custAddress')],
       ['Phone',            val('custPhone')],
       ['Floor Plan',       val('floorPlan')],
